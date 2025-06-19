@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Feedbacks MoodPair</title>
+  <style>
+    body { background: #111; color: #fff; font-family: sans-serif; padding: 20px; }
+    h1 { color: #7A5AF8; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { padding: 12px; text-align: left; }
+    th { background-color: #222; color: #7A5AF8; }
+    tr:nth-child(even) { background-color: #1a1a1a; }
+    tr:nth-child(odd) { background-color: #2a2a2a; }
+    button { background: #7A5AF8; border: none; color: white; padding: 10px 20px; border-radius: 8px; cursor: pointer; margin-top: 16px; }
+    #auth { display: flex; flex-direction: column; gap: 12px; max-width: 300px; margin-top: 40px; }
+    input { padding: 8px; border-radius: 6px; border: none; }
+    .redflag { color: red; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>Feedbacks utilisateurs</h1>
+
+  <div id="auth">
+    <input type="password" id="password" placeholder="Mot de passe admin">
+    <button onclick="checkPassword()">Entrer</button>
+  </div>
+
+  <div id="dashboard" style="display:none">
+    <h2>💬 Avis</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Avis</th>
+          <th>Humeur</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody id="feedbackTable"></tbody>
+    </table>
+    <button onclick="clearFeedbacks()">🧹 Vider les feedbacks</button>
+
+    <h2 style="margin-top:40px">🚨 Signalements</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Contre</th>
+          <th>Motif</th>
+          <th>Humeur</th>
+          <th>Date</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="reportTable"></tbody>
+    </table>
+    <button onclick="clearReports()">🧼 Vider les signalements</button>
+  </div>
+
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script>
+    const socket = io('http://localhost:3000');
+    const password = "admin123";
+
+    function checkPassword() {
+      const input = document.getElementById("password").value;
+      if (input === password) {
+        document.getElementById("auth").style.display = "none";
+        document.getElementById("dashboard").style.display = "block";
+      } else {
+        alert("Mot de passe incorrect");
+      }
+    }
+
+    socket.on('feedback_update', (feedbacks) => {
+      const table = document.getElementById('feedbackTable');
+      table.innerHTML = '';
+      feedbacks.forEach(f => {
+        const row = document.createElement('tr');
+        row.innerHTML = `<td>${f.choice}</td><td>${f.mood}</td><td>${new Date(f.timestamp).toLocaleString('fr-FR')}</td>`;
+        table.appendChild(row);
+      });
+    });
+
+    socket.on('report_update', (reports) => {
+      const table = document.getElementById('reportTable');
+      table.innerHTML = '';
+
+      const countMap = {};
+      reports.forEach(r => {
+        countMap[r.partnerId] = (countMap[r.partnerId] || 0) + 1;
+      });
+
+      reports.forEach(r => {
+        const flagged = countMap[r.partnerId] >= 3;
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td class="${flagged ? 'redflag' : ''}">${flagged ? '🚩 ' : ''}${r.partnerId}</td>
+          <td>${r.reason}</td>
+          <td>${r.mood}</td>
+          <td>${new Date(r.timestamp).toLocaleString('fr-FR')}</td>
+          <td><button onclick="banUser('${r.partnerId}')">Ban</button></td>
+        `;
+        table.appendChild(row);
+      });
+    });
+
+    function clearFeedbacks() {
+      socket.emit('clear_feedbacks', password);
+    }
+
+    function clearReports() {
+      socket.emit('clear_reports', password);
+    }
+
+    function banUser(id) {
+      alert(`L'utilisateur ${id} est maintenant banni manuellement.`);
+      socket.emit('report', {
+        partnerId: id,
+        reason: "Banni manuellement",
+        mood: "-",
+      });
+    }
+  </script>
+</body>
+</html>
