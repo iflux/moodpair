@@ -1,8 +1,15 @@
 const { Server } = require('socket.io');
+const express = require('express'); // Ajouter express pour gérer les routes HTTP
+const app = express();
 let waitingQueue = []; // Initialisation de la file d'attente
 
+// Configuration du serveur HTTP pour servir le frontend
+app.use(express.static('public')); // Servir un dossier 'public' avec tes fichiers statiques (HTML, CSS, JS)
+
 // Création du serveur WebSocket en utilisant le port dynamique
-const io = new Server(process.env.PORT || 3000, {
+const io = new Server(app.listen(process.env.PORT || 3000, () => {
+  console.log(`🚀 Serveur HTTP et WebSocket en ligne sur le port ${process.env.PORT}`);
+}), {
   cors: { origin: '*' }
 });
 
@@ -134,5 +141,3 @@ io.on('connection', (socket) => {
   });
 });
 
-// Afficher le port utilisé pour débogage
-console.log(`🚀 Serveur WebSocket en ligne sur le port ${process.env.PORT}`);
