@@ -1,5 +1,5 @@
 #!/bin/bash
-# Installe Flutter dans le dossier courant
+# Installe Flutter dans le dossier backend
 git clone https://github.com/flutter/flutter.git -b stable
 export PATH="$PATH:`pwd`/flutter/bin"
 
@@ -9,5 +9,5 @@ flutter doctor
 # Récupère les dépendances de Flutter
 flutter pub get
 
-# Compile l'application Flutter pour le Web
+# Compile l'application Flutter pour le Web (produit des fichiers dans 'build/web')
 flutter build web
