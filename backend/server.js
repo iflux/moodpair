@@ -1,75 +1,21 @@
 const express = require('express');
-const { Server } = require('socket.io');
 const path = require('path');
 
 const app = express();
-const port = process.env.PORT || 3000;
 
-// Servez les fichiers statiques de l'application Flutter
-app.use(express.static(path.join(__dirname, 'build', 'web')));
+// Définir le répertoire où Flutter a généré les fichiers Web (ici, 'web/')
+const webDir = path.join(__dirname, '..', 'web'); // Répertoire web à la racine de ton projet
 
-// Créez un serveur WebSocket avec Socket.IO
-const io = new Server(app.listen(port, () => {
-  console.log(`🚀 Serveur WebSocket et HTTP en ligne sur le port ${port}`);
-}), {
-  cors: { origin: '*' }
-});
+// Servir les fichiers statiques depuis le répertoire 'web/'
+app.use(express.static(webDir));
 
-let partners = {}; // socketId -> partnerId
-let feedbacks = [];
-let reports = [];
-let reportCount = {}; // socketId -> count
-let banned = new Set();
-
-// Configuration WebSocket
-io.on('connection', (socket) => {
-  console.log('✅ Client connecté :', socket.id);
-
-  if (banned.has(socket.id)) {
-    console.log(`⛔ Accès refusé à ${socket.id} (banni)`);
-    socket.disconnect(true);
-    return;
-  }
-
-  socket.emit('feedback_update', feedbacks);
-  socket.emit('report_update', reports);
-
-  socket.on('join', (mood) => {
-    console.log(`🧠 ${socket.id} cherche un pair avec l'humeur "${mood}"`);
-
-    waitingQueue = waitingQueue.filter(entry => entry.socketId !== socket.id);
-
-    const match = waitingQueue.find(entry => entry.mood === mood);
-    if (match) {
-      const partnerSocket = io.sockets.sockets.get(match.socketId);
-      if (partnerSocket) {
-        partners[socket.id] = match.socketId;
-        partners[match.socketId] = socket.id;
-
-        socket.emit('matched', match.socketId);
-        partnerSocket.emit('matched', socket.id);
-
-        console.log(`🤝 Match entre ${socket.id} et ${match.socketId}`);
-      }
-      waitingQueue = waitingQueue.filter(entry => entry.socketId !== match.socketId);
-    } else {
-      waitingQueue.push({ socketId: socket.id, mood });
-      console.log(`👤 Ajouté à la file : ${socket.id}`);
-    }
-  });
-
-  // Gérer d'autres événements comme 'left', 'feedback', 'message', etc.
-  // ...
-
-  socket.on('disconnect', () => {
-    console.log(`❌ ${socket.id} s'est déconnecté`);
-    // Gérer la déconnexion des utilisateurs
-  });
-});
-
-// Route HTTP pour la page d'accueil ou d'autres pages Flutter
+// Route de fallback pour toutes les autres pages (si nécessaire)
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'build', 'web', 'index.html'));
+  res.sendFile(path.join(webDir, 'index.html')); // Sert index.html pour toute autre route
 });
 
-console.log('🚀 Serveur HTTP et WebSocket prêt');
+// Lancer le serveur sur un port dynamique ou 3000
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  console.log(`Serveur Express en écoute sur le port ${port}`);
+});
