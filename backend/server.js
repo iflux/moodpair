@@ -1,6 +1,7 @@
 const { Server } = require('socket.io');
 let waitingQueue = []; // Initialisation de la file d'attente
 
+// Création du serveur WebSocket en utilisant le port dynamique
 const io = new Server(process.env.PORT || 3000, {
   cors: { origin: '*' }
 });
@@ -133,4 +134,5 @@ io.on('connection', (socket) => {
   });
 });
 
-console.log('🚀 Serveur WebSocket en ligne : http://localhost:3000');
+// Afficher le port utilisé pour débogage
+console.log(`🚀 Serveur WebSocket en ligne sur le port ${process.env.PORT}`);
