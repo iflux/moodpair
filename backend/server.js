@@ -1,9 +1,10 @@
 const { Server } = require('socket.io');
-const io = new Server(3000, {
+let waitingQueue = []; // Initialisation de la file d'attente
+
+const io = new Server(process.env.PORT || 3000, {
   cors: { origin: '*' }
 });
 
-let waitingQueue = [];
 let partners = {}; // socketId -> partnerId
 let feedbacks = [];
 let reports = [];
